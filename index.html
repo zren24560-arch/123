@@ -3,203 +3,661 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Supabase 文本记录器</title>
+  <title>每日记录</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      max-width: 900px;
-      margin: 30px auto;
-      padding: 0 16px;
-      background: #f8fafc;
-      line-height: 1.6;
-    }
-    h1 { margin-bottom: 8px; }
-    .hint { color: #666; font-size: 14px; margin-bottom: 20px; }
-    .panel {
-      background: #fff;
-      border: 1px solid #e5e7eb;
-      border-radius: 10px;
-      padding: 16px;
-      margin-top: 18px;
-    }
-    textarea, button {
-      width: 100%;
+    *, *::before, *::after {
       box-sizing: border-box;
-      padding: 10px;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --primary: #18181B;
+      --secondary: #3F3F46;
+      --accent: #2563EB;
+      --accent-hover: #1D4ED8;
+      --bg: #FAFAFA;
+      --surface: #FFFFFF;
+      --border: #E4E4E7;
+      --border-hover: #A1A1AA;
+      --text: #09090B;
+      --muted: #71717A;
+      --success: #16A34A;
+      --success-bg: #F0FDF4;
+      --error: #DC2626;
+      --error-bg: #FEF2F2;
+      --warning-bg: #FFF7ED;
+      --radius: 12px;
+      --radius-sm: 8px;
+      --shadow: 0 1px 3px 0 rgba(0,0,0,.08), 0 1px 2px -1px rgba(0,0,0,.06);
+      --shadow-md: 0 4px 6px -1px rgba(0,0,0,.08), 0 2px 4px -2px rgba(0,0,0,.06);
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ─── Layout ─── */
+    .app-wrapper {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 48px 20px 80px;
+    }
+
+    /* ─── Header ─── */
+    .header {
+      margin-bottom: 40px;
+    }
+
+    .header-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 4px;
+    }
+
+    .site-title {
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      color: var(--text);
+    }
+
+    .header-date {
+      font-size: 13px;
+      color: var(--muted);
+      font-weight: 400;
+    }
+
+    .header-desc {
       font-size: 14px;
-      border-radius: 8px;
-      border: 1px solid #d1d5db;
-      margin-top: 8px;
+      color: var(--muted);
+      margin-top: 6px;
     }
+
+    /* ─── Card ─── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+      box-shadow: var(--shadow);
+      margin-bottom: 16px;
+      transition: box-shadow 0.2s ease;
+    }
+
+    .card:hover {
+      box-shadow: var(--shadow-md);
+    }
+
+    .card-label {
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+      margin-bottom: 16px;
+    }
+
+    /* ─── Textarea ─── */
+    .textarea-wrap {
+      position: relative;
+    }
+
     textarea {
+      width: 100%;
       min-height: 160px;
+      padding: 14px 16px;
+      font-size: 14px;
+      font-family: inherit;
+      color: var(--text);
+      background: var(--bg);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
       resize: vertical;
+      outline: none;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+      line-height: 1.7;
     }
-    button {
-      background: #2563eb;
-      color: white;
+
+    textarea::placeholder {
+      color: #A1A1AA;
+    }
+
+    textarea:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+      background: var(--surface);
+    }
+
+    .char-count {
+      position: absolute;
+      bottom: 10px;
+      right: 12px;
+      font-size: 11px;
+      color: #A1A1AA;
+      pointer-events: none;
+      transition: color 0.2s;
+    }
+
+    .char-count.near-limit { color: var(--error); }
+
+    /* ─── Buttons ─── */
+    .btn-row {
+      display: flex;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 10px 20px;
+      font-size: 14px;
+      font-weight: 500;
+      font-family: inherit;
+      border-radius: var(--radius-sm);
       border: none;
       cursor: pointer;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+      text-decoration: none;
     }
-    button:hover {
-      background: #1d4ed8;
+
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+      flex: 1;
     }
-    .row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-      margin-top: 12px;
+
+    .btn-primary:hover:not(:disabled) {
+      background: var(--accent-hover);
+      box-shadow: 0 4px 12px rgba(37,99,235,0.25);
+      transform: translateY(-1px);
     }
-    #status {
-      white-space: pre-wrap;
-      color: #111827;
+
+    .btn-primary:active { transform: translateY(0); }
+
+    .btn-secondary {
+      background: var(--bg);
+      color: var(--secondary);
+      border: 1.5px solid var(--border);
+      flex: 1;
     }
-    .record {
-      padding: 12px 0;
-      border-bottom: 1px solid #e5e7eb;
+
+    .btn-secondary:hover:not(:disabled) {
+      border-color: var(--border-hover);
+      background: var(--surface);
+      transform: translateY(-1px);
     }
-    .record:last-child {
-      border-bottom: none;
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none !important;
     }
-    .meta {
-      color: #6b7280;
+
+    .btn svg {
+      flex-shrink: 0;
+    }
+
+    /* ─── Status Toast ─── */
+    #toast {
+      position: fixed;
+      bottom: 28px;
+      left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      background: var(--text);
+      color: #fff;
+      padding: 10px 20px;
+      border-radius: 100px;
+      font-size: 13px;
+      font-weight: 500;
+      box-shadow: var(--shadow-md);
+      opacity: 0;
+      transition: all 0.3s cubic-bezier(.34,1.56,.64,1);
+      pointer-events: none;
+      white-space: nowrap;
+      z-index: 100;
+    }
+
+    #toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    #toast.success { background: var(--success); }
+    #toast.error   { background: var(--error); }
+
+    /* ─── Records ─── */
+    .records-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+
+    .records-count {
       font-size: 12px;
-      margin-bottom: 6px;
+      color: var(--muted);
+      background: var(--bg);
+      border: 1px solid var(--border);
+      padding: 3px 10px;
+      border-radius: 100px;
+      font-weight: 500;
     }
-    .content {
+
+    .record-item {
+      padding: 16px 0;
+      border-bottom: 1px solid var(--border);
+      animation: fadeSlideIn 0.3s ease forwards;
+    }
+
+    .record-item:last-child { border-bottom: none; }
+    .record-item:first-child { padding-top: 0; }
+
+    @keyframes fadeSlideIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .record-meta {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 8px;
+      flex-wrap: wrap;
+    }
+
+    .record-time {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 500;
+    }
+
+    .record-time svg {
+      opacity: 0.6;
+    }
+
+    .record-id {
+      font-size: 11px;
+      color: #D4D4D8;
+      font-weight: 400;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      padding: 1px 7px;
+      border-radius: 4px;
+    }
+
+    .record-date-badge {
+      font-size: 11px;
+      color: var(--accent);
+      background: #EFF6FF;
+      border: 1px solid #BFDBFE;
+      padding: 1px 8px;
+      border-radius: 100px;
+      font-weight: 500;
+    }
+
+    .record-content {
+      font-size: 14px;
+      color: var(--text);
+      line-height: 1.7;
       white-space: pre-wrap;
       word-break: break-word;
     }
-    .empty {
-      color: #6b7280;
+
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--muted);
+    }
+
+    .empty-state svg {
+      display: block;
+      margin: 0 auto 12px;
+      opacity: 0.3;
+    }
+
+    .empty-state p {
+      font-size: 14px;
+    }
+
+    /* ─── Loading skeleton ─── */
+    .skeleton {
+      background: linear-gradient(90deg, var(--border) 25%, #F4F4F5 50%, var(--border) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.4s infinite;
+      border-radius: 4px;
+      height: 14px;
+      margin-bottom: 8px;
+    }
+
+    .skeleton.short { width: 40%; }
+    .skeleton.long  { width: 85%; }
+    .skeleton.full  { width: 100%; }
+
+    @keyframes shimmer {
+      0%   { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    /* ─── Loading spinner ─── */
+    .spinner {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+    }
+
+    .spinner.dark {
+      border-color: rgba(0,0,0,0.1);
+      border-top-color: var(--secondary);
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* ─── Footer ─── */
+    .footer {
+      margin-top: 40px;
+      text-align: center;
+      font-size: 12px;
+      color: #D4D4D8;
+    }
+
+    /* ─── Responsive ─── */
+    @media (max-width: 480px) {
+      .app-wrapper { padding: 32px 16px 80px; }
+      .site-title  { font-size: 22px; }
+      .card        { padding: 18px; }
+      .btn-row     { flex-direction: column; }
     }
   </style>
 </head>
 <body>
-  <h1>Supabase 文本记录器</h1>
-  <div class="hint">输入文本后保存到 Supabase，并可读取最近记录。</div>
+  <div class="app-wrapper">
 
-  <div class="panel">
-    <strong>输入文本</strong>
-    <textarea id="content" placeholder="请输入要保存的内容"></textarea>
-    <div class="row">
-      <button id="saveBtn">保存文本</button>
-      <button id="loadBtn">读取最近记录</button>
+    <!-- Header -->
+    <header class="header">
+      <div class="header-top">
+        <h1 class="site-title">每日记录</h1>
+        <span class="header-date" id="headerDate"></span>
+      </div>
+      <p class="header-desc">记录你的想法、灵感与每日点滴，一切都会妥善保存。</p>
+    </header>
+
+    <!-- Write Panel -->
+    <div class="card">
+      <div class="card-label">新建记录</div>
+      <div class="textarea-wrap">
+        <textarea id="content" placeholder="今天想记录些什么…" maxlength="2000"></textarea>
+        <span class="char-count" id="charCount">0 / 2000</span>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-primary" id="saveBtn" onclick="saveText()">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/>
+          </svg>
+          保存记录
+        </button>
+        <button class="btn btn-secondary" id="loadBtn" onclick="loadRecords()">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/>
+          </svg>
+          刷新记录
+        </button>
+      </div>
     </div>
+
+    <!-- Records Panel -->
+    <div class="card">
+      <div class="records-header">
+        <div class="card-label" style="margin-bottom:0">历史记录</div>
+        <span class="records-count" id="recordsCount">加载中…</span>
+      </div>
+      <div id="records">
+        <!-- loading skeleton -->
+        <div class="record-item">
+          <div class="skeleton short"></div>
+          <div class="skeleton long"></div>
+          <div class="skeleton full"></div>
+        </div>
+        <div class="record-item">
+          <div class="skeleton short"></div>
+          <div class="skeleton long"></div>
+        </div>
+      </div>
+    </div>
+
+    <footer class="footer">Powered by Supabase · 数据已加密存储</footer>
   </div>
 
-  <div class="panel">
-    <strong>状态信息</strong>
-    <div id="status">页面已加载。</div>
-  </div>
-
-  <div class="panel">
-    <strong>最近记录</strong>
-    <div id="records" class="empty">暂无数据</div>
-  </div>
+  <!-- Toast notification -->
+  <div id="toast"></div>
 
   <script>
-    const SUPABASE_URL = "https://efljgmrwqjndofsutkrp.supabase.co";
-    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVmbGpnbXJ3cWpuZG9mc3V0a3JwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExNzIzMjksImV4cCI6MjA5Njc0ODMyOX0.JnM9YbCuc5efGm6xIyrHUmVPdDNEHn1qLdxQsBEaViU";
-    const TABLE_NAME = "text_notes";
+    // ─── Config ───────────────────────────────────────────────────────────────
+    const SUPABASE_URL  = "https://efljgmrwqjndofsutkrp.supabase.co";
+    const SUPABASE_KEY  = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVmbGpnbXJ3cWpuZG9mc3V0a3JwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExNzIzMjksImV4cCI6MjA5Njc0ODMyOX0.JnM9YbCuc5efGm6xIyrHUmVPdDNEHn1qLdxQsBEaViU";
+    const TABLE_NAME    = "text_notes";
+    const MAX_CHARS     = 2000;
 
     const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    const contentEl = document.getElementById("content");
-    const statusEl = document.getElementById("status");
-    const recordsEl = document.getElementById("records");
+    // ─── DOM refs ─────────────────────────────────────────────────────────────
+    const contentEl     = document.getElementById("content");
+    const charCountEl   = document.getElementById("char-count") || document.getElementById("charCount");
+    const recordsEl     = document.getElementById("records");
+    const recordsCountEl= document.getElementById("recordsCount");
+    const toastEl       = document.getElementById("toast");
+    const saveBtnEl     = document.getElementById("saveBtn");
+    const loadBtnEl     = document.getElementById("loadBtn");
 
-    function setStatus(message) {
-      statusEl.textContent = message;
+    // ─── Header date ──────────────────────────────────────────────────────────
+    (function setHeaderDate() {
+      const now = new Date();
+      const opts = { year: "numeric", month: "long", day: "numeric", weekday: "long" };
+      document.getElementById("headerDate").textContent =
+        now.toLocaleDateString("zh-CN", opts);
+    })();
+
+    // ─── Char counter ─────────────────────────────────────────────────────────
+    contentEl.addEventListener("input", () => {
+      const len = contentEl.value.length;
+      charCountEl.textContent = `${len} / ${MAX_CHARS}`;
+      charCountEl.classList.toggle("near-limit", len > MAX_CHARS * 0.9);
+    });
+
+    // ─── Toast ────────────────────────────────────────────────────────────────
+    let toastTimer;
+    function showToast(msg, type = "") {
+      clearTimeout(toastTimer);
+      toastEl.textContent = msg;
+      toastEl.className   = "show " + type;
+      toastTimer = setTimeout(() => { toastEl.className = ""; }, 3000);
     }
 
-    function escapeHtml(text) {
-      return text
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
+    // ─── Date helpers ─────────────────────────────────────────────────────────
+    function formatDateTime(isoString) {
+      if (!isoString) return "—";
+      const d = new Date(isoString);
+      const now = new Date();
+      const pad = n => String(n).padStart(2, "0");
+
+      const year  = d.getFullYear();
+      const month = d.getMonth() + 1;
+      const day   = d.getDate();
+      const hour  = d.getHours();
+      const min   = d.getMinutes();
+      const sec   = d.getSeconds();
+
+      const timeStr = `${pad(hour)}:${pad(min)}:${pad(sec)}`;
+      const dateStr = `${year}年${month}月${day}日`;
+
+      // Relative label
+      const today     = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const dDate     = new Date(year, month - 1, day);
+      const diffDays  = Math.round((today - dDate) / 86400000);
+
+      let relLabel;
+      if (diffDays === 0)      relLabel = "今天";
+      else if (diffDays === 1) relLabel = "昨天";
+      else if (diffDays === 2) relLabel = "前天";
+      else if (diffDays < 7)   relLabel = `${diffDays}天前`;
+      else                     relLabel = null;
+
+      return { dateStr, timeStr, relLabel };
     }
 
+    // ─── Escape HTML ──────────────────────────────────────────────────────────
+    function esc(text) {
+      return String(text)
+        .replace(/&/g, "&amp;").replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    }
+
+    // ─── Render records ───────────────────────────────────────────────────────
     function renderRecords(rows) {
       if (!rows || rows.length === 0) {
-        recordsEl.innerHTML = '<div class="empty">暂无记录</div>';
+        recordsCountEl.textContent = "0 条";
+        recordsEl.innerHTML = `
+          <div class="empty-state">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <line x1="16" y1="13" x2="8" y2="13"/>
+              <line x1="16" y1="17" x2="8" y2="17"/>
+              <polyline points="10 9 9 9 8 9"/>
+            </svg>
+            <p>还没有记录，开始写下第一条吧 ✨</p>
+          </div>`;
         return;
       }
 
-      recordsEl.innerHTML = rows.map(row => `
-        <div class="record">
-          <div class="meta">ID: ${row.id} | ${row.created_at}</div>
-          <div class="content">${escapeHtml(row.content || "")}</div>
-        </div>
-      `).join("");
+      recordsCountEl.textContent = `${rows.length} 条`;
+
+      recordsEl.innerHTML = rows.map((row, i) => {
+        const { dateStr, timeStr, relLabel } = formatDateTime(row.created_at);
+        const delay = i * 40;
+
+        return `
+          <div class="record-item" style="animation-delay:${delay}ms">
+            <div class="record-meta">
+              <span class="record-time">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                  <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+                </svg>
+                ${timeStr}
+              </span>
+              ${relLabel ? `<span class="record-date-badge">${relLabel}</span>` : ""}
+              <span class="record-time">${dateStr}</span>
+              <span class="record-id">#${row.id}</span>
+            </div>
+            <div class="record-content">${esc(row.content || "")}</div>
+          </div>`;
+      }).join("");
     }
 
+    // ─── Save ─────────────────────────────────────────────────────────────────
     async function saveText() {
       const content = contentEl.value.trim();
+      if (!content) { showToast("内容不能为空", "error"); return; }
 
-      if (!content) {
-        setStatus("保存失败：文本内容不能为空。");
-        return;
-      }
-
-      setStatus("正在保存...");
+      saveBtnEl.disabled = true;
+      saveBtnEl.innerHTML = `<span class="spinner"></span> 保存中…`;
 
       try {
-        const { data, error, status, statusText } = await supabaseClient
+        const { data, error } = await supabaseClient
           .from(TABLE_NAME)
-          .insert([{ content: content }])
+          .insert([{ content }])
           .select();
 
-        if (error) {
-          throw new Error(
-            `状态码: ${status || "未知"}\n` +
-            `状态描述: ${statusText || "未知"}\n` +
-            `错误信息: ${error.message}`
-          );
-        }
+        if (error) throw error;
 
         contentEl.value = "";
-        setStatus("保存成功。");
-        console.log("保存结果：", data);
+        charCountEl.textContent = `0 / ${MAX_CHARS}`;
+        showToast("✓ 已保存", "success");
         await loadRecords();
       } catch (err) {
-        setStatus("保存失败：\n" + err.message);
-        console.error("保存失败详情：", err);
+        console.error(err);
+        showToast("保存失败：" + (err.message || "未知错误"), "error");
+      } finally {
+        saveBtnEl.disabled = false;
+        saveBtnEl.innerHTML = `
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/>
+            <polyline points="17 21 17 13 7 13 7 21"/>
+            <polyline points="7 3 7 8 15 8"/>
+          </svg>
+          保存记录`;
       }
     }
 
+    // ─── Load ─────────────────────────────────────────────────────────────────
     async function loadRecords() {
-      setStatus("正在读取记录...");
+      loadBtnEl.disabled = true;
+      loadBtnEl.innerHTML = `<span class="spinner dark"></span> 加载中…`;
+      recordsCountEl.textContent = "加载中…";
 
       try {
-        const { data, error, status, statusText } = await supabaseClient
+        const { data, error } = await supabaseClient
           .from(TABLE_NAME)
           .select("id, content, created_at")
-          .order("id", { ascending: false })
-          .limit(20);
+          .order("created_at", { ascending: false })
+          .limit(50);
 
-        if (error) {
-          throw new Error(
-            `状态码: ${status || "未知"}\n` +
-            `状态描述: ${statusText || "未知"}\n` +
-            `错误信息: ${error.message}`
-          );
-        }
-
+        if (error) throw error;
         renderRecords(data);
-        setStatus(`读取成功，共 ${data.length} 条。`);
       } catch (err) {
-        setStatus("读取失败：\n" + err.message);
-        console.error("读取失败详情：", err);
+        console.error(err);
+        recordsCountEl.textContent = "加载失败";
+        recordsEl.innerHTML = `
+          <div class="empty-state">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            <p>加载失败：${esc(err.message || "网络错误")}</p>
+          </div>`;
+        showToast("读取失败：" + (err.message || "未知错误"), "error");
+      } finally {
+        loadBtnEl.disabled = false;
+        loadBtnEl.innerHTML = `
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/>
+          </svg>
+          刷新记录`;
       }
     }
 
-    document.getElementById("saveBtn").addEventListener("click", saveText);
-    document.getElementById("loadBtn").addEventListener("click", loadRecords);
+    // ─── Keyboard shortcut: Ctrl/Cmd+Enter to save ────────────────────────────
+    contentEl.addEventListener("keydown", e => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+        e.preventDefault();
+        saveText();
+      }
+    });
 
+    // ─── Init ─────────────────────────────────────────────────────────────────
     loadRecords();
   </script>
 </body>
