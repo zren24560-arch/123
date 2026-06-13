@@ -6,7 +6,7 @@
   <title>每日记录</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     *, *::before, *::after {
@@ -152,6 +152,121 @@
     }
 
     .char-count.near-limit { color: var(--error); }
+
+    /* ─── Person Selector ─── */
+    .person-selector {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .person-label-text {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--muted);
+      flex-shrink: 0;
+    }
+
+    .person-option {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      cursor: pointer;
+      padding: 7px 16px;
+      border-radius: 100px;
+      border: 1.5px solid var(--border);
+      font-size: 13px;
+      font-weight: 500;
+      font-family: inherit;
+      transition: all 0.25s ease;
+      user-select: none;
+      background: var(--surface);
+      color: var(--secondary);
+    }
+
+    .person-option:hover {
+      border-color: var(--border-hover);
+      transform: translateY(-1px);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+    }
+
+    .person-option input[type="radio"] {
+      display: none;
+    }
+
+    /* ── 小豪 selected state ── */
+    .person-option.xiaohao-selected {
+      background: #1e3a5f;
+      color: #fff;
+      border-color: #1e3a5f;
+      box-shadow: 0 2px 8px rgba(30,58,95,0.25);
+    }
+
+    .person-option.xiaohao-selected .person-dot {
+      background: #60a5fa;
+      box-shadow: 0 0 6px rgba(96,165,250,0.5);
+    }
+
+    /* ── 小茹 selected state ── */
+    .person-option.xiaoru-selected {
+      background: #9b2c4c;
+      color: #fff;
+      border-color: #9b2c4c;
+      box-shadow: 0 2px 8px rgba(155,44,76,0.25);
+    }
+
+    .person-option.xiaoru-selected .person-dot {
+      background: #f472b6;
+      box-shadow: 0 0 6px rgba(244,114,182,0.5);
+    }
+
+    .person-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--border);
+      transition: all 0.25s ease;
+    }
+
+    /* ── 小豪 内容字体：马山正楷 ── */
+    .record-content.author-xiaohao {
+      font-family: 'Ma Shan Zheng', cursive;
+      font-size: 17px;
+      line-height: 2;
+      letter-spacing: 0.02em;
+    }
+
+    /* ── 小茹 内容字体：站酷小薇 ── */
+    .record-content.author-xiaoru {
+      font-family: 'ZCOOL XiaoWei', serif;
+      font-size: 16px;
+      line-height: 1.9;
+      letter-spacing: 0.01em;
+    }
+
+    /* ── 作者标签 ── */
+    .record-author-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 11px;
+      font-weight: 500;
+      padding: 2px 9px;
+      border-radius: 100px;
+    }
+
+    .record-author-badge.xiaohao {
+      background: #EFF6FF;
+      color: #1e3a5f;
+      border: 1px solid #BFDBFE;
+    }
+
+    .record-author-badge.xiaoru {
+      background: #FDF2F8;
+      color: #9b2c4c;
+      border: 1px solid #FBCFE8;
+    }
 
     /* ─── Buttons ─── */
     .btn-row {
@@ -409,6 +524,19 @@
     <!-- Write Panel -->
     <div class="card">
       <div class="card-label">新建记录</div>
+      <div class="person-selector">
+        <span class="person-label-text">输入人：</span>
+        <label class="person-option xiaohao-selected" id="personXiaohao">
+          <input type="radio" name="author" value="小豪" checked />
+          <span class="person-dot"></span>
+          小豪
+        </label>
+        <label class="person-option" id="personXiaoru">
+          <input type="radio" name="author" value="小茹" />
+          <span class="person-dot"></span>
+          小茹
+        </label>
+      </div>
       <div class="textarea-wrap">
         <textarea id="content" placeholder="今天想记录些什么…" maxlength="2000"></textarea>
         <span class="char-count" id="charCount">0 / 2000</span>
@@ -472,6 +600,24 @@
     const toastEl       = document.getElementById("toast");
     const saveBtnEl     = document.getElementById("saveBtn");
     const loadBtnEl     = document.getElementById("loadBtn");
+
+    // ─── Person selector state ─────────────────────────────────────────────────
+    let selectedAuthor = "小豪"; // default
+
+    const personXiaohao = document.getElementById("personXiaohao");
+    const personXiaoru  = document.getElementById("personXiaoru");
+
+    personXiaohao.addEventListener("click", () => {
+      selectedAuthor = "小豪";
+      personXiaohao.classList.add("xiaohao-selected");
+      personXiaoru.classList.remove("xiaoru-selected");
+    });
+
+    personXiaoru.addEventListener("click", () => {
+      selectedAuthor = "小茹";
+      personXiaoru.classList.add("xiaoru-selected");
+      personXiaohao.classList.remove("xiaohao-selected");
+    });
 
     // ─── Header date ──────────────────────────────────────────────────────────
     (function setHeaderDate() {
@@ -560,6 +706,29 @@
         const { dateStr, timeStr, relLabel } = formatDateTime(row.created_at);
         const delay = i * 40;
 
+        // Determine author: from dedicated column or fallback prefix in content
+        let author = row.author || "";
+        let displayContent = row.content || "";
+
+        if (!author) {
+          const prefixMatch = displayContent.match(/^【(.+?)】/);
+          if (prefixMatch && (prefixMatch[1] === "小豪" || prefixMatch[1] === "小茹")) {
+            author = prefixMatch[1];
+            displayContent = displayContent.slice(prefixMatch[0].length);
+          }
+        }
+
+        const authorClass = author === "小豪" ? "xiaohao" : author === "小茹" ? "xiaoru" : "";
+        const contentClass = authorClass ? ` author-${authorClass}` : "";
+        const authorBadge = author
+          ? `<span class="record-author-badge ${authorClass}">
+               <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                 <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/>
+               </svg>
+               ${esc(author)}
+             </span>`
+          : "";
+
         return `
           <div class="record-item" style="animation-delay:${delay}ms">
             <div class="record-meta">
@@ -571,9 +740,10 @@
               </span>
               ${relLabel ? `<span class="record-date-badge">${relLabel}</span>` : ""}
               <span class="record-time">${dateStr}</span>
+              ${authorBadge}
               <span class="record-id">#${row.id}</span>
             </div>
-            <div class="record-content">${esc(row.content || "")}</div>
+            <div class="record-content${contentClass}">${esc(displayContent)}</div>
           </div>`;
       }).join("");
     }
@@ -587,10 +757,27 @@
       saveBtnEl.innerHTML = `<span class="spinner"></span> 保存中…`;
 
       try {
+        let insertData = { content, author: selectedAuthor };
+
         const { data, error } = await supabaseClient
           .from(TABLE_NAME)
-          .insert([{ content }])
+          .insert([insertData])
           .select();
+
+        // If author column doesn't exist, retry without it
+        if (error && (error.message || "").toLowerCase().includes("column") && (error.message || "").includes("author")) {
+          console.warn("author column not found, falling back to content-only insert");
+          const { data: data2, error: error2 } = await supabaseClient
+            .from(TABLE_NAME)
+            .insert([{ content: `【${selectedAuthor}】${content}` }])
+            .select();
+          if (error2) throw error2;
+          contentEl.value = "";
+          charCountEl.textContent = `0 / ${MAX_CHARS}`;
+          showToast("✓ 已保存（需在Supabase添加author列以启用字体区分）", "success");
+          await loadRecords();
+          return;
+        }
 
         if (error) throw error;
 
@@ -622,7 +809,7 @@
       try {
         const { data, error } = await supabaseClient
           .from(TABLE_NAME)
-          .select("id, content, created_at")
+          .select("id, content, author, created_at")
           .order("created_at", { ascending: false })
           .limit(50);
 
